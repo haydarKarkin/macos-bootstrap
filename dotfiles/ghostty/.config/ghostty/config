@@ -1,0 +1,13 @@
+# Ghostty configuration. cmux runs on top of this, so the theme and font
+# set here are what shows up in every terminal session.
+#
+# Ghostty ships sensible defaults for everything, so only overrides belong
+# in this file. Full option list:  ghostty +show-config --default --docs
+#
+# Reload without restarting: Cmd + Shift + comma
+
+theme = Xcode Dark hc
+
+# Nerd Font is required — powerlevel10k draws its prompt with glyphs that
+# don't exist in a normal font. Installed via the Brewfile.
+font-family = "JetBrainsMono Nerd Font"
