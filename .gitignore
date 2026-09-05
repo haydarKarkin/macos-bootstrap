@@ -1,0 +1,16 @@
+# Never commit these.
+*.local
+.env
+.env.*
+!.env.example
+id_*
+*.pem
+*.p12
+*.mobileprovision
+
+# Output of scripts/sync-back.sh — reviewed and merged by hand.
+Brewfile.dump
+mise-installed.txt
+xcode-installed.txt
+
+.DS_Store
