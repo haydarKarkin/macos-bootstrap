@@ -1,0 +1,9 @@
+# frozen_string_literal: true
+#
+# Mac App Store applications.
+# Find an app's ID with: mas search "<name>"
+# Requires being signed in to the App Store first.
+
+# mas "Xcode", id: 497799835
+# mas "Keynote", id: 409183694
+# mas "WhatsApp", id: 310633997
