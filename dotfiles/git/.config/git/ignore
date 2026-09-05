@@ -1,0 +1,18 @@
+# Global gitignore — applies to every repository.
+
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+.idea/
+*.swp
+*.swo
+
+.direnv/
+.env.local
+
+**/.claude/settings.local.json
+**/.claude/.cc-writes/
