@@ -1,0 +1,4 @@
+# Simulator runtimes to install.
+# List what's available with: xcodes runtimes
+
+iOS 26.5

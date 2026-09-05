@@ -1,0 +1,5 @@
+# Xcode versions to install, oldest first.
+# The LAST line is the one made active via `xcodes select`.
+# List what's available with: xcodes list
+
+26.5
