@@ -1,0 +1,50 @@
+# Global mise config — CLI tools and language runtimes.
+# GUI applications live in the Brewfile instead.
+
+[tools]
+# --- shell and files -------------------------------------------------
+bat        = 'latest'   # cat with syntax highlighting
+direnv     = 'latest'   # per-directory environment variables
+eza        = 'latest'   # modern ls
+fd         = 'latest'   # modern find
+fzf        = 'latest'   # fuzzy finder
+jq         = 'latest'   # JSON processor
+ripgrep    = 'latest'   # fast grep
+tmux       = 'latest'   # terminal multiplexer
+yq         = 'latest'   # YAML/XML/TOML/CSV processor
+zoxide     = 'latest'   # smarter cd
+
+# --- git -------------------------------------------------------------
+delta      = 'latest'   # git diff viewer
+lazygit    = 'latest'   # git TUI
+
+# --- editor ----------------------------------------------------------
+neovim     = 'latest'
+
+# --- AI / agent CLIs -------------------------------------------------
+claude     = 'latest'   # Claude Code
+copilot    = 'latest'   # GitHub Copilot CLI (aqua:github/copilot-cli)
+opencode   = 'latest'   # aqua:anomalyco/opencode
+
+# --- runtimes --------------------------------------------------------
+node          = '26'
+ruby          = '4.0.2'
+"gem:bundler" = 'latest'
+
+# iOS tooling is deliberately NOT pinned globally. Each project brings its
+# own tuist / swiftlint / swiftformat / xcbeautify / carthage versions in
+# its own .config/mise/config.toml.
+
+[settings]
+experimental           = true
+not_found_auto_install = true
+yes                    = true
+jobs                   = 5
+color                  = true
+
+# Keep mise away from the system and Xcode toolchains.
+disable_tools = [
+  "swift",
+  "go",
+  "python",
+]
