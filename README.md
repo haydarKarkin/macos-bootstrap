@@ -80,7 +80,10 @@ macos-bootstrap/
 │   ├── ghostty/.config/ghostty/config
 │   ├── tmux/.tmux.conf
 │   └── nvim/.config/nvim/init.lua
-└── scripts/sync-back.sh         # dump current machine state into the repo
+└── scripts/
+    ├── update.sh                # upgrade brew, mise, omz, gh extensions, mas
+    ├── clean.sh                 # drop old versions, caches, unlisted Xcodes
+    └── sync-back.sh             # dump current machine state into the repo
 ```
 
 ## How dotfiles work
@@ -130,11 +133,40 @@ Dotfiles are symlinks, so they're always in sync. For package state:
 git diff                        # review, then merge into Brewfile by hand
 ```
 
-Day-to-day updates:
+Day-to-day updates, and cleaning up after them:
 
 ```sh
-up                              # alias: brew + mise + omz, all at once
+up                              # alias for ./scripts/update.sh
+cleanup                         # alias for ./scripts/clean.sh
 ```
+
+Both take the same flags as `bootstrap.sh`, and every target can be run on
+its own:
+
+```sh
+./scripts/update.sh --list      # brew mise omz gh mas
+./scripts/update.sh --dry-run   # show what's outdated, upgrade nothing
+./scripts/clean.sh --dry-run    # show what would be removed
+./scripts/clean.sh brew mise    # only these two
+```
+
+A target that fails is reported at the end; the others still run.
+
+| Target  | `update.sh`                                       | `clean.sh`                                                        |
+|---------|---------------------------------------------------|-------------------------------------------------------------------|
+| `brew`  | `brew update` + `brew upgrade`                    | `brew autoremove`, `brew cleanup --prune=all`; lists anything installed but not in the `Brewfile`, removes none of it |
+| `mise`  | `mise upgrade`, within the ranges in `config.toml` | `mise prune` (versions no known config asks for), `mise cache prune` |
+| `gem`   | —                                                 | `gem cleanup` for the global ruby                                 |
+| `omz`   | oh-my-zsh, plus the theme/plugins in `$ZSH_CUSTOM` | —                                                                 |
+| `gh`    | `gh extension upgrade --all`                      | —                                                                 |
+| `mas`   | `mas upgrade`                                     | —                                                                 |
+| `xcode` | — (versions are pinned in `config/`)              | deletes unavailable simulators and unusable/outdated runtimes; offers to remove each Xcode not in `config/xcode-versions.txt` |
+
+Upgrading leaves the old versions in place, so `up` followed by `cleanup`
+is the full cycle. `clean.sh` asks before each Xcode it removes, never
+touches the selected one, and moves removed Xcodes to the Trash.
+`mise prune` keeps any version a project's `mise.toml` still pins, as long
+as that project is still on disk.
 
 ## Manual steps afterwards
 
