@@ -57,3 +57,61 @@ link_file() {
   ln -s "$src" "$dst"
   ok "${dst/#$HOME/\~}"
 }
+
+# Strip comments and blank lines from a config list.
+read_list() {
+  [[ -f "$1" ]] || return 0
+  grep -vE '^\s*(#|$)' "$1" || true
+}
+
+dry_run() { [[ "${DRY_RUN:-0}" -eq 1 ]]; }
+
+# y/N prompt. Reads the terminal, not stdin, so it works inside a
+# `while read` loop; with no terminal it answers no.
+confirm() {
+  local reply
+  ( : </dev/tty ) 2>/dev/null || return 1
+  read -r -p "  $1 [y/N] " reply </dev/tty || return 1
+  [[ "$reply" == [yY] ]]
+}
+
+# Argument parsing and dispatch shared by scripts/update.sh and
+# scripts/clean.sh. Calls <prefix>_<target> for each requested target, or
+# for all of $TARGETS when none are given. A failing target is reported
+# and the rest still run.
+run_targets() {
+  local prefix="$1"; shift
+  local -a requested=() failed=()
+  local t
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --list) printf '  %s\n' "${TARGETS[@]}"; exit 0 ;;
+      --dry-run) DRY_RUN=1; shift ;;
+      -h|--help)
+        sed -n '3,/^$/p' "$0" | sed -e 's/^# \{0,1\}//' -e '/^$/d'
+        exit 0
+        ;;
+      -*) die "unknown option: $1" ;;
+      *)
+        contains "$1" "${TARGETS[@]}" || die "unknown target: $1 (see --list)"
+        requested+=("$1"); shift
+        ;;
+    esac
+  done
+
+  [[ ${#requested[@]} -gt 0 ]] || requested=("${TARGETS[@]}")
+
+  for t in "${requested[@]}"; do
+    log "$prefix $t"
+    # Subshell with errexit back on: `set -e` is ignored inside anything
+    # tested by `||` or `if`, so the status is collected by hand instead.
+    set +e
+    ( set -e; "${prefix}_$t" )
+    [[ $? -eq 0 ]] || failed+=("$t")
+    set -e
+  done
+
+  [[ ${#failed[@]} -eq 0 ]] || die "failed: ${failed[*]}"
+  log "Done."
+}
