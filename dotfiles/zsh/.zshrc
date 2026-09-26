@@ -148,7 +148,9 @@ alias zshrc='$EDITOR ~/.zshrc'
 alias bootstrap='cd ~/dev/macos-bootstrap && ./bootstrap.sh'
 
 # Update everything in one go.
-alias up='brew update && brew upgrade && brew cleanup && mise upgrade && omz update'
+alias up='~/dev/macos-bootstrap/scripts/update.sh'
+# Drop old versions, caches, dead simulators, unlisted Xcodes.
+alias cleanup='~/dev/macos-bootstrap/scripts/clean.sh'
 
 
 # =========================
