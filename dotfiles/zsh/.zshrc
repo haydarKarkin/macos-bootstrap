@@ -145,12 +145,17 @@ alias ta='tmux attach'
 
 alias reload='exec zsh'
 alias zshrc='$EDITOR ~/.zshrc'
-alias bootstrap='cd ~/dev/macos-bootstrap && ./bootstrap.sh'
 
-# Update everything in one go.
-alias up='~/dev/macos-bootstrap/scripts/update.sh'
-# Drop old versions, caches, dead simulators, unlisted Xcodes.
-alias cleanup='~/dev/macos-bootstrap/scripts/clean.sh'
+# This file is a symlink into the repo, so the repo is wherever it was
+# cloned: dotfiles/zsh/.zshrc, three levels down.
+BOOTSTRAP_DIR="${${(%):-%x}:A:h:h:h}"
+if [[ -f "$BOOTSTRAP_DIR/bootstrap.sh" ]]; then
+  alias bootstrap='cd "$BOOTSTRAP_DIR" && ./bootstrap.sh'
+  # Update everything in one go.
+  alias up='"$BOOTSTRAP_DIR"/scripts/update.sh'
+  # Drop old versions, caches, dead simulators, unlisted Xcodes.
+  alias cleanup='"$BOOTSTRAP_DIR"/scripts/clean.sh'
+fi
 
 
 # =========================
