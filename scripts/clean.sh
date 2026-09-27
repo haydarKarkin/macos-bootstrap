@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Remove what updates leave behind: old Homebrew, mise and gem versions,
-# caches, dead simulators, and Xcodes no longer in config/xcode-versions.txt.
+# Remove what updates leave behind: old Homebrew and mise versions, caches,
+# dead simulators, and Xcodes no longer in config/xcode-versions.txt.
 # Usage: ./scripts/clean.sh [--list] [--dry-run] [target ...]
 
 set -euo pipefail
@@ -16,6 +16,8 @@ source "$REPO_ROOT/lib/common.sh"
 brew_shellenv || true
 
 TARGETS=(brew mise gem xcode)
+# gem only runs when named: see clean_gem.
+DEFAULT_TARGETS=(brew mise xcode)
 
 clean_brew() {
   brew_shellenv || die "Homebrew missing"
@@ -30,9 +32,14 @@ clean_brew() {
   fi
 
   # Report only: something installed by hand may be there on purpose.
-  # Add it to the Brewfile or `brew uninstall` it.
+  # Add it to the Brewfile or `brew uninstall` it. Without --force, brew
+  # still offers to remove everything on a terminal, so stdin is closed.
+  # The type flags keep out Mac App Store apps (they're in the Masfile),
+  # npm/uv/cargo globals and the rest. Its own "run --force" hint is
+  # dropped, because run bare, that would remove all of those.
   log "installed but not in the Brewfile:"
-  brew bundle cleanup --file="$REPO_ROOT/Brewfile" || true
+  brew bundle cleanup --file="$REPO_ROOT/Brewfile" --formula --cask --tap </dev/null 2>&1 \
+    | grep -v 'brew bundle cleanup --force' || true
 }
 
 # mise remembers every config it has loaded (see `mise ls --prunable`). A
@@ -49,7 +56,9 @@ clean_mise() {
   fi
 }
 
-# Old versions of gems in the global ruby's GEM_HOME.
+# Old versions of gems in the global ruby's GEM_HOME. Not run by default:
+# gem cleanup knows nothing about Gemfile.lock, so it also removes the
+# older versions projects pin, and they need a `bundle install` again.
 clean_gem() {
   has mise || die "mise missing"
   # The global ruby, not whatever the current directory pins.

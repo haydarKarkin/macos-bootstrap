@@ -77,8 +77,8 @@ confirm() {
 
 # Argument parsing and dispatch shared by scripts/update.sh and
 # scripts/clean.sh. Calls <prefix>_<target> for each requested target, or
-# for all of $TARGETS when none are given. A failing target is reported
-# and the rest still run.
+# when none are given, for $DEFAULT_TARGETS if set, else all of $TARGETS.
+# A failing target is reported and the rest still run.
 run_targets() {
   local prefix="$1"; shift
   local -a requested=() failed=()
@@ -86,7 +86,16 @@ run_targets() {
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      --list) printf '  %s\n' "${TARGETS[@]}"; exit 0 ;;
+      --list)
+        for t in "${TARGETS[@]}"; do
+          if [[ -n "${DEFAULT_TARGETS+x}" ]] && ! contains "$t" "${DEFAULT_TARGETS[@]}"; then
+            printf '  %s (only when named)\n' "$t"
+          else
+            printf '  %s\n' "$t"
+          fi
+        done
+        exit 0
+        ;;
       --dry-run) DRY_RUN=1; shift ;;
       -h|--help)
         sed -n '3,/^$/p' "$0" | sed -e 's/^# \{0,1\}//' -e '/^$/d'
@@ -100,7 +109,13 @@ run_targets() {
     esac
   done
 
-  [[ ${#requested[@]} -gt 0 ]] || requested=("${TARGETS[@]}")
+  if [[ ${#requested[@]} -eq 0 ]]; then
+    if [[ -n "${DEFAULT_TARGETS+x}" ]]; then
+      requested=("${DEFAULT_TARGETS[@]}")
+    else
+      requested=("${TARGETS[@]}")
+    fi
+  fi
 
   for t in "${requested[@]}"; do
     log "$prefix $t"

@@ -156,7 +156,7 @@ A target that fails is reported at the end; the others still run.
 |---------|---------------------------------------------------|-------------------------------------------------------------------|
 | `brew`  | `brew update` + `brew upgrade`                    | `brew autoremove`, `brew cleanup --prune=all`; lists anything installed but not in the `Brewfile`, removes none of it |
 | `mise`  | `mise upgrade`, within the ranges in `config.toml` | `mise prune` (versions no known config asks for), `mise cache prune` |
-| `gem`   | —                                                 | `gem cleanup` for the global ruby                                 |
+| `gem`   | —                                                 | `gem cleanup` for the global ruby; only when named (`clean.sh gem`), since it also removes versions a `Gemfile.lock` pins |
 | `omz`   | oh-my-zsh, plus the theme/plugins in `$ZSH_CUSTOM` | —                                                                 |
 | `gh`    | `gh extension upgrade --all`                      | —                                                                 |
 | `mas`   | `mas upgrade`                                     | —                                                                 |
