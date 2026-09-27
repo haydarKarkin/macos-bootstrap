@@ -160,13 +160,23 @@ A target that fails is reported at the end; the others still run.
 | `omz`   | oh-my-zsh, plus the theme/plugins in `$ZSH_CUSTOM` | —                                                                 |
 | `gh`    | `gh extension upgrade --all`                      | —                                                                 |
 | `mas`   | `mas upgrade`                                     | —                                                                 |
-| `xcode` | — (versions are pinned in `config/`)              | deletes unavailable simulators and unusable/outdated runtimes; offers to remove each Xcode not in `config/xcode-versions.txt` |
+| `xcode` | — (versions are pinned in `config/`)              | deletes unavailable simulators and unusable/outdated runtimes; offers to remove each `*OS DeviceSupport` entry older than 90 days (`DEVICE_SUPPORT_DAYS=…` to change) and each Xcode not in `config/xcode-versions.txt` |
 
 Upgrading leaves the old versions in place, so `up` followed by `cleanup`
-is the full cycle. `clean.sh` asks before each Xcode it removes, never
-touches the selected one, and moves removed Xcodes to the Trash.
+is the full cycle. `clean.sh` asks before each Xcode and device support
+entry it removes, never touches the selected Xcode, moves removed Xcodes
+to the Trash, and prints how much free space changed when it's done.
 `mise prune` keeps any version a project's `mise.toml` still pins, as long
 as that project is still on disk.
+
+## Linting
+
+Every push runs [ShellCheck](https://www.shellcheck.net) over the scripts
+(`.github/workflows/shellcheck.yml`). Locally:
+
+```sh
+shellcheck bootstrap.sh lib/*.sh install/*.sh scripts/*.sh
+```
 
 ## Manual steps afterwards
 
