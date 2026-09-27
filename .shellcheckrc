@@ -1,0 +1,4 @@
+# `# shellcheck source=` paths are relative to the script, and sourced files
+# are followed, so run_targets' use of $TARGETS is seen from scripts/.
+source-path=SCRIPTDIR
+external-sources=true

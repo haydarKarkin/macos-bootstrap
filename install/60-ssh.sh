@@ -66,12 +66,16 @@ fi
 # --- GitHub ----------------------------------------------------------
 if has gh && gh auth status >/dev/null 2>&1; then
   title="$(scutil --get ComputerName 2>/dev/null || hostname)"
-  gh ssh-key add "$key.pub" --title "$title" 2>/dev/null \
-    && ok "auth key uploaded to GitHub" \
-    || warn "auth key may already be present"
-  gh ssh-key add "$key.pub" --title "$title (signing)" --type signing 2>/dev/null \
-    && ok "signing key uploaded to GitHub" \
-    || warn "signing key may already be present"
+  if gh ssh-key add "$key.pub" --title "$title" 2>/dev/null; then
+    ok "auth key uploaded to GitHub"
+  else
+    warn "auth key may already be present"
+  fi
+  if gh ssh-key add "$key.pub" --title "$title (signing)" --type signing 2>/dev/null; then
+    ok "signing key uploaded to GitHub"
+  else
+    warn "signing key may already be present"
+  fi
 else
   warn "not authenticated with gh. Run: gh auth login"
   warn "then: gh ssh-key add $key.pub --type signing"

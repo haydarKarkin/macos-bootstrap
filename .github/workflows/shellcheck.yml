@@ -1,0 +1,14 @@
+name: shellcheck
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      # ShellCheck ships with the ubuntu-latest image; .shellcheckrc applies.
+      - run: shellcheck --version
+      - run: shellcheck bootstrap.sh lib/*.sh install/*.sh scripts/*.sh
