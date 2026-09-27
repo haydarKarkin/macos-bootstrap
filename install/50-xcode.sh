@@ -11,11 +11,11 @@ has xcodes || die "xcodes missing — run 20-brew-bundle first"
 versions_file="$REPO_ROOT/config/xcode-versions.txt"
 runtimes_file="$REPO_ROOT/config/simulator-runtimes.txt"
 
-installed="$(xcodes installed 2>/dev/null || true)"
+installed="$(xcodes_installed_versions)"
 
 while IFS= read -r version; do
   [[ -n "$version" ]] || continue
-  if grep -qF "$version" <<<"$installed"; then
+  if grep -qxF "$version" <<<"$installed"; then
     ok "Xcode $version installed"
     continue
   fi

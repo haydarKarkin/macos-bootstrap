@@ -39,29 +39,45 @@ sudo_keepalive() {
   done 2>/dev/null &
 }
 
+# $HOME/foo -> ~/foo, for output. Not ${p/#$HOME/\~}: bash 3.2 prints the
+# backslash, and bash 5 expands an unescaped ~ right back to $HOME.
+pretty_path() {
+  case "$1" in
+    "$HOME"|"$HOME"/*) printf '~%s\n' "${1#"$HOME"}" ;;
+    *) printf '%s\n' "$1" ;;
+  esac
+}
+
 # Symlink src -> dst, moving anything already there out of the way.
 link_file() {
-  local src="$1" dst="$2"
+  local src="$1" dst="$2" backup
 
   if [[ -L "$dst" ]]; then
     # Already pointing at us: nothing to do.
     [[ "$(readlink "$dst")" == "$src" ]] && return 0
     rm "$dst"
   elif [[ -e "$dst" ]]; then
-    local backup="$dst.backup.$(date +%Y%m%d%H%M%S)"
-    warn "${dst/#$HOME/\~} exists → $(basename "$backup")"
+    backup="$dst.backup.$(date +%Y%m%d%H%M%S)"
+    warn "$(pretty_path "$dst") exists → $(basename "$backup")"
     mv "$dst" "$backup"
   fi
 
   mkdir -p "$(dirname "$dst")"
   ln -s "$src" "$dst"
-  ok "${dst/#$HOME/\~}"
+  ok "$(pretty_path "$dst")"
 }
 
 # Strip comments and blank lines from a config list.
 read_list() {
   [[ -f "$1" ]] || return 0
   grep -vE '^\s*(#|$)' "$1" || true
+}
+
+# Installed Xcodes, one per line, by the name xcodes gives them ("26.5",
+# "27.0 Beta 3"). config/xcode-versions.txt lists the same names.
+#   26.5 (17F42) [Apple Silicon] (Selected)	/Applications/Xcode-26.5.0.app
+xcodes_installed_versions() {
+  xcodes installed 2>/dev/null | sed 's/ (.*//' || true
 }
 
 dry_run() { [[ "${DRY_RUN:-0}" -eq 1 ]]; }
@@ -123,6 +139,7 @@ run_targets() {
     # tested by `||` or `if`, so the status is collected by hand instead.
     set +e
     ( set -e; "${prefix}_$t" )
+    # shellcheck disable=SC2181
     [[ $? -eq 0 ]] || failed+=("$t")
     set -e
   done
