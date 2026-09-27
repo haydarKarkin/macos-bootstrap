@@ -51,7 +51,7 @@ if [[ ${#REQUESTED[@]} -gt 0 ]]; then
   done
 fi
 
-sudo_keepalive
+[[ $DRY_RUN -eq 1 ]] || sudo_keepalive
 
 for script in "${STEPS[@]}"; do
   name="$(basename "$script" .sh)"
@@ -67,6 +67,7 @@ for script in "${STEPS[@]}"; do
 
   log "$name"
   # Subshell, so a step cannot leak exports into the next one.
+  # shellcheck source=/dev/null
   ( source "$REPO_ROOT/lib/common.sh"; source "$script" )
 done
 
