@@ -17,4 +17,4 @@ if ! mas account >/dev/null 2>&1; then
 fi
 
 log "brew bundle (Masfile)…"
-brew bundle install --file="$masfile" --no-lock
+brew bundle install --file="$masfile"
