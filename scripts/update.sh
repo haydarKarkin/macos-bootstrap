@@ -47,7 +47,7 @@ update_mise() {
 update_omz() {
   local zsh_dir="${ZSH:-$HOME/.oh-my-zsh}"
   local custom="${ZSH_CUSTOM:-$zsh_dir/custom}"
-  local repo
+  local repo name
 
   if [[ ! -d "$zsh_dir" ]]; then
     warn "oh-my-zsh not installed, skipping"
@@ -55,7 +55,7 @@ update_omz() {
   fi
 
   if dry_run; then
-    printf '  would update %s\n' "$zsh_dir"
+    printf '  would update %s\n' "$(pretty_path "$zsh_dir")"
   else
     # `omz update` is a zsh function; this is the script it runs.
     ZSH="$zsh_dir" zsh -f "$zsh_dir/tools/upgrade.sh"
@@ -63,13 +63,16 @@ update_omz() {
 
   # omz update only covers oh-my-zsh itself, not the theme and plugins
   # 30-dotfiles cloned into $ZSH_CUSTOM.
+  # One with local changes shouldn't hold up the rest.
   for repo in "$custom"/themes/*/ "$custom"/plugins/*/; do
     [[ -d "$repo/.git" ]] || continue
+    name="$(basename "$repo")"
     if dry_run; then
-      printf '  would pull %s\n' "$(basename "$repo")"
+      printf '  would pull %s\n' "$name"
+    elif git -C "$repo" pull --quiet --ff-only; then
+      ok "$name up to date"
     else
-      git -C "$repo" pull --quiet --ff-only
-      ok "$(basename "$repo") up to date"
+      warn "$name: pull failed, check $(pretty_path "$repo")"
     fi
   done
 }
