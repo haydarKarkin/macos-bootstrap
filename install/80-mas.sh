@@ -10,11 +10,10 @@ if ! grep -qE '^\s*mas ' "$masfile" 2>/dev/null; then
   return 0
 fi
 
-if ! mas account >/dev/null 2>&1; then
-  warn "not signed in to the App Store — skipping this step."
-  warn "sign in, then run: ./bootstrap.sh 80-mas"
-  return 0
-fi
-
 log "brew bundle (Masfile)…"
-brew bundle install --file="$masfile"
+# mas can no longer tell whether you're signed in (there is no
+# `mas account` any more), so a failed install is the only signal.
+if ! brew bundle install --file="$masfile"; then
+  warn "some App Store apps failed to install."
+  warn "sign in to the App Store, then run: ./bootstrap.sh 80-mas"
+fi
