@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 #
 # Remove what updates leave behind: old Homebrew and mise versions, caches,
-# dead simulators, and Xcodes no longer in config/xcode-versions.txt.
+# dead simulators, stale device support, and Xcodes no longer in
+# config/xcode-versions.txt.
 # Usage: ./scripts/clean.sh [--list] [--dry-run] [target ...]
 
 set -euo pipefail
@@ -75,7 +76,18 @@ clean_gem() {
 }
 
 clean_xcode() {
-  # --- simulators ------------------------------------------------------
+  clean_simulators
+  clean_device_support
+  clean_xcode_versions
+}
+
+clean_simulators() {
+  # Only full Xcode has simctl, not the Command Line Tools alone.
+  if ! xcrun --find simctl >/dev/null 2>&1; then
+    warn "simctl not found (no Xcode selected?), skipping simulators"
+    return 0
+  fi
+
   # Devices whose runtime is gone can never boot again.
   if dry_run; then
     xcrun simctl list devices unavailable
@@ -92,28 +104,65 @@ clean_xcode() {
       xcrun simctl runtime delete "$mode" || warn "simctl runtime delete $mode failed"
     fi
   done
+}
 
-  # --- Xcode versions --------------------------------------------------
+# Symbols Xcode copies off each physical device, one directory per OS
+# version, a few GB each. The age is when Xcode wrote the directory, not
+# when that device was last plugged in, so a phone that has stayed on one
+# iOS version gets offered too: hence the per-entry prompt. Anything
+# removed is copied again the next time a device on that version connects.
+DEVICE_SUPPORT_DAYS="${DEVICE_SUPPORT_DAYS:-90}"
+
+clean_device_support() {
+  local dir entry
+  local -a old=()
+
+  for dir in "$HOME"/Library/Developer/Xcode/*" DeviceSupport"; do
+    [[ -d "$dir" ]] || continue
+    while IFS= read -r -d '' entry; do
+      old+=("$entry")
+    done < <(find "$dir" -mindepth 1 -maxdepth 1 -type d -mtime +"$DEVICE_SUPPORT_DAYS" -print0)
+  done
+
+  if [[ ${#old[@]} -eq 0 ]]; then
+    ok "no device support older than $DEVICE_SUPPORT_DAYS days"
+    return 0
+  fi
+
+  local size
+  for entry in "${old[@]}"; do
+    size="$(du -sh "$entry" | awk '{ print $1 }')"
+    if dry_run; then
+      printf '  would offer %s (%s)\n' "$(pretty_path "$entry")" "$size"
+    elif confirm "remove $(pretty_path "$entry") ($size)?"; then
+      rm -rf -- "$entry"
+      ok "removed $(basename "$entry")"
+    else
+      ok "kept $(basename "$entry")"
+    fi
+  done
+}
+
+clean_xcode_versions() {
   if ! has xcodes; then
     warn "xcodes missing, skipping Xcode versions"
     return 0
   fi
 
-  local wanted line version
+  local wanted selected version
   wanted="$(read_list "$REPO_ROOT/config/xcode-versions.txt")"
   # An empty list would make every Xcode a candidate.
   if [[ -z "$wanted" ]]; then
     warn "config/xcode-versions.txt is empty, not removing any Xcode"
     return 0
   fi
+  selected="$(xcodes installed 2>/dev/null | grep -F '(Selected)' | sed 's/ (.*//' || true)"
 
-  while IFS= read -r line; do
-    # 26.5 (17F42) [Apple Silicon] (Selected)	/Applications/Xcode-26.5.0.app
-    version="${line%% (*}"
+  while IFS= read -r version; do
     [[ -n "$version" ]] || continue
     grep -qxF "$version" <<<"$wanted" && continue
 
-    if [[ "$line" == *"(Selected)"* ]]; then
+    if [[ "$version" == "$selected" ]]; then
       warn "Xcode $version is selected but not in config/xcode-versions.txt, keeping it"
       continue
     fi
@@ -127,7 +176,20 @@ clean_xcode() {
     else
       ok "kept Xcode $version"
     fi
-  done < <(xcodes installed 2>/dev/null || true)
+  done < <(xcodes_installed_versions)
 }
+
+# Free space on the data volume, reported when the script exits. Xcodes
+# sit in the Trash until it is emptied, so they don't show up here yet.
+free_gb() { df -g "$HOME" | awk 'NR == 2 { print $4 }'; }
+FREE_BEFORE="$(free_gb)"
+
+report_free() {
+  local now
+  dry_run && return 0
+  now="$(free_gb)"
+  [[ "$now" == "$FREE_BEFORE" ]] || log "free space: $FREE_BEFORE GB → $now GB"
+}
+trap report_free EXIT
 
 run_targets clean "$@"
