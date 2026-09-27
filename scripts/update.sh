@@ -34,6 +34,9 @@ update_brew() {
 # a new major is a config change: `mise upgrade --bump`, then commit.
 update_mise() {
   has mise || die "mise missing"
+  # The global tools only: inside a project this would also upgrade its
+  # tools and rewrite its mise.lock.
+  cd "$HOME"
   if dry_run; then
     mise upgrade --dry-run
   else
